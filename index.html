@@ -3,216 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Armar Objetos</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
-
+<title>Entrar</title>
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Fundo neutro sofisticado */
-body {
-    font-family: 'Playfair Display', serif;
-    background: linear-gradient(135deg, #f4f1ea, #e6e1d8);
-    color: #2d2d2d;
-    height: 100vh;
-    overflow: hidden;
-}
-
-/* Puzzle ocupa tudo */
-.puzzle-container {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-}
-
-/* SVG */
-#puzzle-svg {
-    width: 100%;
-    height: 100%;
-}
-
-/* Conteúdo */
-.content {
-    position: relative;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
-
-/* Título */
-.title {
-    font-size: clamp(3rem, 8vw, 6rem);
-    letter-spacing: 0.05em;
-    text-align: center;
-
-    color: #2d2d2d;
-
-    text-shadow:
-        0 2px 10px rgba(0,0,0,0.1);
-
-    animation: fadeIn 1.2s ease forwards;
-}
-
-/* Botão */
-.cta-button {
-    position: absolute;
-    bottom: 60px;
-
-    background: #bfb7a8; /* tom neutro mais forte */
-    border: 1px solid rgba(0,0,0,0.15);
-    color: #2d2d2d;
-
-    padding: 0.9rem 2.4rem;
-    letter-spacing: 0.12em;
-    font-weight: 500;
-
-    border-radius: 6px;
-
-    cursor: pointer;
-    transition: all 0.25s ease;
-}
-
-/* Hover */
-.cta-button:hover {
-    background: #a89f8e;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-}
-
-/* Clique */
-.cta-button:active {
-    transform: translateY(0);
-    box-shadow: none;
-}
-
-/* Animações */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.puzzle-piece {
-    opacity: 0;
-    animation: fall 0.6s ease forwards;
-}
-
-@keyframes fall {
-    from {
-        opacity: 0;
-        transform: translateY(-40px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
+  * { margin:0; padding:0; box-sizing:border-box; font-family: 'Inter', Arial, sans-serif; }
+  body {
+    height:100vh; display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(135deg, #f7f6f3, #eae7e2);
+    color:#1a1a1a;
+  }
+  .box {
+    background:#fff; padding:40px 36px; border-radius:18px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    width: 320px; text-align:center;
+  }
+  h1 { font-size:1.3rem; font-weight:600; margin-bottom:6px; }
+  p { font-size:0.85rem; color:#666; margin-bottom:22px; }
+  input {
+    width:100%; font-size:1.6rem; letter-spacing:6px; text-align:center;
+    padding:12px 0; border-radius:10px; border:1px solid #ccc; margin-bottom:16px;
+  }
+  button {
+    width:100%; padding:12px 0; border-radius:10px; border:none;
+    background:#222; color:#fff; font-size:1rem; cursor:pointer;
+  }
+  button:hover { background:#444; }
+  .msg { margin-top:14px; font-size:0.85rem; color:#c0392b; min-height:18px; }
 </style>
 </head>
-
 <body>
 
-<div class="puzzle-container">
-    <svg id="puzzle-svg"></svg>
-</div>
-
-<div class="content">
-    <h1 class="title">Armar Objetos</h1>
-
-    <a href="page1.html">
-        <button class="cta-button">INICIAR</button>
-    </a>
-</div>
+  <div class="box">
+    <h1>🔒 Acesso restrito</h1>
+    <p>Digite o código de 6 dígitos do seu app autenticador</p>
+    <input id="code" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autofocus>
+    <button onclick="checkCode()">Entrar</button>
+    <div class="msg" id="msg"></div>
+  </div>
 
 <script>
-const VW = window.innerWidth;
-const VH = window.innerHeight;
+// ================== CONFIGURAÇÃO ==================
+// Esta é a chave secreta compartilhada com o app autenticador.
+// Troque por uma nova se quiser gerar outra (veja instruções).
+const SECRET_B32 = "UWFZRNFP2K2OG52SUGBENOAT5P3FKF2M";
+// Para onde vai depois de liberar o acesso:
+const DESTINO = "home.html";
+// ====================================================
 
-/* tamanho das peças */
-const PW = 120;
-const PH = 110;
-const R = 14;
-
-/* cálculo correto SEM limite */
-const COLS = Math.ceil(VW / PW) + 2;
-const ROWS = Math.ceil(VH / PH) + 2;
-
-/* offset para garantir cobertura total */
-const OX = -PW;
-const OY = -PH;
-
-const ns = 'http://www.w3.org/2000/svg';
-
-/* paleta neutra elegante */
-const colors = [
-    '#d6d1c7',
-    '#cfc8bd',
-    '#e0dbd2',
-    '#c7c0b5',
-    '#dcd6cc'
-];
-
-function getType(r,c){
-    return ((r+c)%2===0)?'knob':'hole';
+function base32ToBytes(base32) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const c of base32.replace(/=+$/, "").toUpperCase()) {
+    const val = alphabet.indexOf(c);
+    if (val === -1) continue;
+    bits += val.toString(2).padStart(5, "0");
+  }
+  const bytes = [];
+  for (let i = 0; i + 8 <= bits.length; i += 8) {
+    bytes.push(parseInt(bits.substr(i, 8), 2));
+  }
+  return new Uint8Array(bytes);
 }
 
-function edge(x1,y1,x2,y2,type){
-    if(type==='flat') return `L${x2},${y2}`;
-
-    const mx=(x1+x2)/2, my=(y1+y2)/2;
-    const dx=x2-x1, dy=y2-y1;
-    const len=Math.sqrt(dx*dx+dy*dy);
-    const ux=dx/len, uy=dy/len;
-
-    const ax=mx-ux*R, ay=my-uy*R;
-    const bx=mx+ux*R, by=my+uy*R;
-
-    const sweep= type==='knob'?1:0;
-
-    return `L${ax},${ay} A${R},${R} 0 0,${sweep} ${bx},${by} L${x2},${y2}`;
+async function hmacSha1(keyBytes, msgBytes) {
+  const key = await crypto.subtle.importKey(
+    "raw", keyBytes, { name: "HMAC", hash: "SHA-1" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, msgBytes);
+  return new Uint8Array(sig);
 }
 
-function piece(r,c){
-    const x=OX+c*PW, y=OY+r*PH;
-    const x2=x+PW, y2=y+PH;
-
-    const top = r===0?'flat':getType(r-1,c)==='knob'?'hole':'knob';
-    const right = c===COLS-1?'flat':getType(r,c);
-    const bottom = r===ROWS-1?'flat':getType(r,c);
-    const left = c===0?'flat':getType(r,c-1)==='knob'?'hole':'knob';
-
-    return `M${x},${y}
-    ${edge(x,y,x2,y,top)}
-    ${edge(x2,y,x2,y2,right)}
-    ${edge(x2,y2,x,y2,bottom)}
-    ${edge(x,y2,x,y,left)} Z`;
+function counterToBytes(counter) {
+  const buf = new ArrayBuffer(8);
+  const view = new DataView(buf);
+  // JS numbers are safe here for realistic counter sizes
+  view.setUint32(4, counter);
+  return new Uint8Array(buf);
 }
 
-const svg = document.getElementById('puzzle-svg');
-svg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+async function totpAt(counter) {
+  const keyBytes = base32ToBytes(SECRET_B32);
+  const msgBytes = counterToBytes(counter);
+  const hmac = await hmacSha1(keyBytes, msgBytes);
+  const offset = hmac[hmac.length - 1] & 0xf;
+  const code = ((hmac[offset] & 0x7f) << 24 |
+                (hmac[offset + 1] & 0xff) << 16 |
+                (hmac[offset + 2] & 0xff) << 8 |
+                (hmac[offset + 3] & 0xff)) % 1000000;
+  return code.toString().padStart(6, "0");
+}
 
-/* gera TODAS as peças (sem limite) */
-for(let r=0;r<ROWS;r++){
-    for(let c=0;c<COLS;c++){
-        const path=document.createElementNS(ns,'path');
-        path.setAttribute('d',piece(r,c));
-        path.setAttribute('fill',colors[(r+c)%colors.length]);
-        path.setAttribute('stroke','rgba(0,0,0,0.1)');
-        path.setAttribute('stroke-width','1');
+async function checkCode() {
+  const input = document.getElementById("code").value.trim();
+  const msg = document.getElementById("msg");
+  const counter = Math.floor(Date.now() / 1000 / 3000);
 
-        path.classList.add('puzzle-piece');
-        path.style.animationDelay = (r*0.08 + c*0.04)+'s';
-
-        svg.appendChild(path);
+  // aceita a janela atual e a anterior/seguinte (tolerância de relógio)
+  for (const c of [counter, counter - 1, counter + 1]) {
+    const valid = await totpAt(c);
+    if (input === valid) {
+      sessionStorage.setItem("categkids_ok", "1");
+      window.location.href = DESTINO;
+      return;
     }
+  }
+  msg.textContent = "Código incorreto. Tente novamente.";
 }
+
+document.getElementById("code").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") checkCode();
+});
 </script>
 
 </body>
